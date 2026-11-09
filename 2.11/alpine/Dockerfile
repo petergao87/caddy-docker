@@ -63,7 +63,17 @@ WORKDIR /srv
 CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
 
 # Cloady HTTPS VLESS/WebSocket proxy. Supply SB_UUID, SB_SUB_TOKEN and SB_HOST at runtime.
-COPY --from=ghcr.io/sagernet/sing-box:1.14.4 /usr/local/bin/sing-box /usr/local/bin/sing-box
+RUN set -eu; \
+    case "$(apk --print-arch)" in \
+      x86_64) arch=amd64; checksum=699a1b510aa4396b2176d32d1181920399ebf1e267835da6f3b598d0f7c24968 ;; \
+      aarch64) arch=arm64; checksum=436441f76ee2f7fe21b5b2d426d3cb261a480455a704865789ad533e4273ec26 ;; \
+      *) echo 'Unsupported sing-box architecture' >&2; exit 1 ;; \
+    esac; \
+    curl -fL --retry 3 "https://github.com/SagerNet/sing-box/releases/download/v1.14.4/sing-box-1.14.4-linux_${arch}.tar.gz" -o /tmp/sing-box.tar.gz; \
+    echo "$checksum  /tmp/sing-box.tar.gz" | sha256sum -c -; \
+    tar -xzf /tmp/sing-box.tar.gz -C /usr/local/bin --strip-components=1 "sing-box-1.14.4-linux_${arch}/sing-box"; \
+    rm -f /tmp/sing-box.tar.gz; \
+    sing-box version
 RUN apk add --no-cache python3
 RUN <<'BUILD_PROXY'
 cat > /usr/local/bin/start-proxy.py <<'PYTHON_PROXY'
