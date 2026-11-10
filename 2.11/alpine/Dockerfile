@@ -98,7 +98,7 @@ def response(path, body, content_type):
 
 prefix = '/sub/' + token
 routes = [response(prefix, base64.b64encode(node.encode()).decode(), 'text/plain; charset=utf-8'),response(prefix+'/sing-box.json',json.dumps(client),'application/json'),response(prefix+'/clash.yaml',json.dumps(clash),'application/yaml'),response(prefix+'/node',node,'text/plain; charset=utf-8'),{'match':[{'path':[ws]}],'handle':[{'handler':'reverse_proxy','upstreams':[{'dial':'127.0.0.1:8080'}]}],'terminal':True},response('/healthz','ok','text/plain'),{'handle':[{'handler':'static_response','status_code':404,'body':'Not found'}]}]
-caddy = {'admin':{'disabled':True},'apps':{'http':{'servers':{'proxy':{'listen':[':3000'],'routes':routes}}}}}
+caddy = {'admin':{'disabled':True},'apps':{'http':{'servers':{'proxy':{'listen':[':'+str(int(os.environ.get('PORT','3000')))],'routes':routes}}}}}
 for name, data in [('server.json',server),('caddy.json',caddy)]:
     (state/name).write_text(json.dumps(data))
 subprocess.run(['sing-box','check','-c',str(state/'server.json')],check=True)
